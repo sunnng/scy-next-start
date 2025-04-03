@@ -29,7 +29,7 @@ const emailSchema = z
 
 export const signUpSchema = z
   .object({
-    username: z
+    name: z
       .string()
       .min(1, "用户名不能为空")
       .min(2, "用户名至少2个字符")

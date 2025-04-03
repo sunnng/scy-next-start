@@ -19,7 +19,7 @@ type SignUpResponse = {
 type SignUpFormRequest = {
   email: string;
   password: string;
-  username: string;
+  name: string;
   image?: File | undefined;
 };
 
@@ -28,12 +28,12 @@ export function useRegister() {
 
   const mutation = useMutation<SignUpResponse, Error, SignUpFormRequest>({
     mutationFn: async (json) => {
-      const { username, email, password, image } = json;
+      const { name, email, password, image } = json;
       console.log(image);
       const { data, error } = await signUp.email({
         email,
         password,
-        name: username,
+        name,
         image: image ? await convertImageToBase64(image) : "",
       });
 

@@ -24,7 +24,7 @@ export function SignUpForm() {
 	const form = useForm<SignUpFormData>({
 		resolver: zodResolver(signUpSchema),
 		defaultValues: {
-			username: "",
+			name: "",
 			email: "",
 			password: "",
 			confirmPassword: "",
@@ -36,6 +36,7 @@ export function SignUpForm() {
 		const file = e.target.files?.[0];
 		if (file) {
 			setImage(file);
+			form.setValue("image", file);
 			const reader = new FileReader();
 			reader.onloadend = () => {
 				setImagePreview(reader.result as string);
@@ -47,7 +48,6 @@ export function SignUpForm() {
 	function onSubmit(values: SignUpFormData) {
 		register({
 			...values,
-			image: image ?? undefined,
 		});
 	}
 
@@ -63,7 +63,7 @@ export function SignUpForm() {
 						<div className="flex flex-col gap-4">
 							<FormField
 								control={form.control}
-								name="username"
+								name="name"
 								render={({ field }) => (
 									<FormItem>
 										<FormLabel>用户名</FormLabel>
@@ -120,7 +120,7 @@ export function SignUpForm() {
 							<FormField
 								control={form.control}
 								name="image"
-								render={() => (
+								render={({ field }) => (
 									<FormItem>
 										<FormLabel>头像（可选）</FormLabel>
 										<FormControl>
@@ -138,11 +138,16 @@ export function SignUpForm() {
 												)}
 												<div className="flex flex-1 items-center gap-2">
 													<Input
+														className="flex-1 cursor-pointer"
 														type="file"
 														accept="image/*"
+														name={field.name}
+														onBlur={field.onBlur}
+														ref={(e) => {
+															field.ref(e);
+															fileInputRef.current = e;
+														}}
 														onChange={handleImageChange}
-														className="flex-1 cursor-pointer"
-														ref={fileInputRef}
 													/>
 													{imagePreview && (
 														<X
@@ -150,6 +155,7 @@ export function SignUpForm() {
 															onClick={() => {
 																setImage(null);
 																setImagePreview(null);
+																form.setValue("image", undefined);
 																if (fileInputRef.current) {
 																	fileInputRef.current.value = "";
 																}
