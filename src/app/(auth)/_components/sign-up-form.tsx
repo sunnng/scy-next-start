@@ -126,13 +126,13 @@ export function SignUpForm() {
 										<FormControl>
 											<div className="flex items-center gap-4">
 												{imagePreview && (
-													<div className="relative h-20 w-20">
+													<div className="relative h-20 w-20 overflow-hidden rounded-lg">
 														<Image
 															src={imagePreview}
 															alt="Profile preview"
-															width={80}
-															height={80}
-															className="rounded-lg object-contain"
+															fill
+															sizes="80px"
+															className="object-cover"
 														/>
 													</div>
 												)}
