@@ -1,3 +1,5 @@
+import { ThemeProvider } from "@/components/theme-provider";
+import { Wrapper, WrapperWithQuery } from "@/components/wrapper";
 import "@/styles/globals.css";
 
 import type { Metadata } from "next";
@@ -16,8 +18,12 @@ const geist = Geist({
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
 	return (
-		<html lang="zh" className={`${geist.variable}`}>
-			<body>{children}</body>
+		<html lang="zh" className={`${geist.variable}`} suppressHydrationWarning>
+			<body>
+				<ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+					<WrapperWithQuery>{children}</WrapperWithQuery>
+				</ThemeProvider>
+			</body>
 		</html>
 	);
 }
