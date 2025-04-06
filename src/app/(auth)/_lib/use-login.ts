@@ -1,13 +1,13 @@
-import { signUp } from "@/lib/auth-client";
+import { signIn } from "@/lib/auth-client";
 
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-import { convertImageToBase64 } from "./utils";
-
-type SignUpResponse = {
-  token: string | null;
+type SignInResponse = {
+  redirect: boolean;
+  token: string;
+  url: string | undefined;
   user: {
     id: string;
     email: string;
@@ -19,25 +19,22 @@ type SignUpResponse = {
   };
 };
 
-type SignUpFormRequest = {
+type SignInFormRequest = {
   email: string;
   password: string;
-  name: string;
-  image?: File | undefined;
 };
 
-export function useRegister() {
+export function useLogin() {
   const router = useRouter();
 
-  const mutation = useMutation<SignUpResponse, Error, SignUpFormRequest>({
-    mutationFn: async (json) => {
-      const { name, email, password, image } = json;
+  const mutation = useMutation<SignInResponse, Error, SignInFormRequest>({
+    mutationFn: async (req) => {
+      const { email, password } = req;
 
-      const { data, error } = await signUp.email({
+      const { data, error } = await signIn.email({
         email,
         password,
-        name,
-        image: image ? await convertImageToBase64(image) : "",
+        rememberMe: false,
       });
 
       if (error) {
@@ -47,11 +44,11 @@ export function useRegister() {
       return data;
     },
     onSuccess: () => {
-      toast.success("注册成功");
+      toast.success("登录成功");
       router.push("/");
     },
     onError: (error) => {
-      toast.error(`注册失败：${error.message}`);
+      toast.error(`登录失败：${error.message}`);
     },
   });
 

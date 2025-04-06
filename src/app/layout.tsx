@@ -1,9 +1,24 @@
 import { ThemeProvider } from "@/components/theme-provider";
-import { Wrapper, WrapperWithQuery } from "@/components/wrapper";
+import { Toaster } from "@/components/ui/sonner";
+import { WrapperWithQuery } from "@/components/wrapper";
+
+import { Nunito } from "next/font/google";
+import { PT_Sans } from "next/font/google";
+
 import "@/styles/globals.css";
 
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+
+const nunito = Nunito({
+	variable: "--font-nunito",
+	subsets: ["latin"],
+});
+
+const ptSans = PT_Sans({
+	variable: "--font-pt-sans",
+	subsets: ["latin"],
+	weight: ["400", "700"],
+});
 
 export const metadata: Metadata = {
 	title: "Scy Next Start",
@@ -11,17 +26,16 @@ export const metadata: Metadata = {
 	icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
-const geist = Geist({
-	subsets: ["latin"],
-	variable: "--font-geist-sans",
-});
-
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
 	return (
-		<html lang="zh" className={`${geist.variable}`} suppressHydrationWarning>
-			<body>
+		<html lang="zh" suppressHydrationWarning>
+			<body className={`${nunito.variable} ${ptSans.variable} relative antialiased`}>
 				<ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-					<WrapperWithQuery>{children}</WrapperWithQuery>
+					<WrapperWithQuery>
+						<div className="texture" />
+						{children}
+						<Toaster />
+					</WrapperWithQuery>
 				</ThemeProvider>
 			</body>
 		</html>

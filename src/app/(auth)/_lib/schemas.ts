@@ -78,6 +78,7 @@ export const signUpSchema = z
 export const signInSchema = z.object({
   email: emailSchema,
   password: z.string().min(1, "密码不能为空").max(64, "密码过长"), // 可选：防止超长输入攻击
+  rememberMe: z.boolean().default(false).optional(),
 });
 
 // 类型推导
