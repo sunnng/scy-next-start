@@ -4,6 +4,8 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import type { SignInFormData } from "./schemas";
+
 type SignInResponse = {
   redirect: boolean;
   token: string;
@@ -19,22 +21,17 @@ type SignInResponse = {
   };
 };
 
-type SignInFormRequest = {
-  email: string;
-  password: string;
-};
-
 export function useLogin() {
   const router = useRouter();
 
-  const mutation = useMutation<SignInResponse, Error, SignInFormRequest>({
+  const mutation = useMutation<SignInResponse, Error, SignInFormData>({
     mutationFn: async (req) => {
-      const { email, password } = req;
+      const { email, password, rememberMe } = req;
 
       const { data, error } = await signIn.email({
         email,
         password,
-        rememberMe: false,
+        rememberMe,
       });
 
       if (error) {

@@ -2,17 +2,21 @@
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { type SignInFormData, signInSchema } from "../_lib/schemas";
+import { useLogin } from "../_lib/use-login";
 
 export function SignInForm() {
+	const { mutate, isPending } = useLogin();
+
 	const form = useForm<SignInFormData>({
 		resolver: zodResolver(signInSchema),
 		defaultValues: {
@@ -23,9 +27,7 @@ export function SignInForm() {
 	});
 
 	function onSubmit(values: SignInFormData) {
-		// Do something with the form values.
-		// ✅ This will be type-safe and validated.
-		console.log(values);
+		mutate(values);
 	}
 
 	return (
@@ -85,7 +87,8 @@ export function SignInForm() {
 						)}
 					/>
 
-					<Button type="submit" className="w-full">
+					<Button type="submit" className="w-full" disabled={isPending}>
+						{isPending && <Loader2 className="animate-spin" />}
 						登录
 					</Button>
 
