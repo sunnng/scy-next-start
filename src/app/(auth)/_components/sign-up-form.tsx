@@ -54,7 +54,7 @@ export function SignUpForm() {
 		<Form {...form}>
 			<form className="flex flex-col gap-6" onSubmit={form.handleSubmit(onSubmit)}>
 				<div className="flex flex-col items-center gap-2 text-center">
-					<h1 className="font-extrabold font-serif text-2xl">注册账号</h1>
+					<h1 className="font-bold text-2xl">注册账号</h1>
 					<p className="text-balance text-muted-foreground text-sm">请填写以下信息以创建您的账号</p>
 				</div>
 

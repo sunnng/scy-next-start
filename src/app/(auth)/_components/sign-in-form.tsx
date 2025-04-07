@@ -35,7 +35,7 @@ export function SignInForm() {
 			<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
 				<div className="flex flex-col gap-6">
 					<div className="flex flex-col items-center gap-2 text-center">
-						<h1 className="font-extrabold font-serif text-2xl">开始使用</h1>
+						<h1 className="font-bold text-2xl">开始使用</h1>
 						<p className="text-balance text-muted-foreground text-sm">请在下方输入您的邮箱账号</p>
 					</div>
 

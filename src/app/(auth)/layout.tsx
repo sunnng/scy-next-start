@@ -11,7 +11,7 @@ export default function AuthLayout({ children }: Readonly<{ children: React.Reac
 						<div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
 							<Cookie className="size-4" />
 						</div>
-						Super Cookie
+						Cookie Run Kingdom
 					</Link>
 				</div>
 				<div className="flex flex-1 items-center justify-center">
