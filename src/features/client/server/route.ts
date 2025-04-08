@@ -20,7 +20,7 @@ const app = new Hono()
 
     // 更新最后活跃时间
     clientLastSeen.set(clientId, Date.now());
-    console.log(clientLastSeen);
+
     return c.json({
       status: "ok",
     });
@@ -31,44 +31,81 @@ const app = new Hono()
     if (!clientId) {
       return c.json(
         {
-          message: "no clientId",
+          code: 4001,
+          message: "Missing clientId header",
         },
         400
       );
     }
 
-    // 检查是否有待发送指令
-    const commands = clientCommands.get(clientId) || [];
-    if (commands.length > 0) {
-      const command = commands.shift();
-      clientCommands.set(clientId, commands);
+    try {
+      // 更新最后活跃时间
+      clientLastSeen.set(clientId, Date.now());
 
-      return c.json({
-        command,
-      });
-    }
-
-    // 无指令时挂起请求（最长等待 30 秒）
-    return new Promise((promiseResolve) => {
-      const timeout = setTimeout(() => {
-        c.json({ event: "timeout" });
-        removePendingRequest(clientId, promiseResolve);
-      }, 30000);
-
-      // 存储挂起请求
-      if (!pendingRequests.has(clientId)) {
-        pendingRequests.set(clientId, []);
+      // 检查是否有待发送指令
+      const commands = clientCommands.get(clientId) || [];
+      if (commands.length > 0) {
+        const command = commands.shift();
+        clientCommands.set(clientId, commands);
+        return c.json({
+          code: 200,
+          event: "command",
+          data: command,
+        });
       }
-      pendingRequests.get(clientId)?.push({
-        clientId,
-        resolve: (command) => {
+
+      // 无指令时挂起请求
+      return new Promise((resolve) => {
+        const timeout = setTimeout(() => {
+          resolve(
+            c.json({
+              code: 200,
+              event: "timeout",
+            })
+          );
+          removePendingRequest(clientId, resolve);
+        }, 30000);
+
+        // 异常处理回调
+        const cleanup = () => {
           clearTimeout(timeout);
-          promiseResolve(c.json({ command }));
-          removePendingRequest(clientId, promiseResolve);
-        },
-        timeout,
+          removePendingRequest(clientId, resolve);
+        };
+
+        // 存储挂起请求
+        const requestEntry = {
+          clientId,
+          resolve: (command: any) => {
+            cleanup();
+            resolve(
+              c.json({
+                code: 200,
+                event: "command",
+                data: command,
+              })
+            );
+          },
+          timeout,
+        };
+
+        if (!pendingRequests.has(clientId)) {
+          pendingRequests.set(clientId, []);
+        }
+        // biome-ignore lint/style/noNonNullAssertion: <explanation>
+        pendingRequests.get(clientId)!.push(requestEntry);
+
+        // 处理连接关闭（兼容多种环境）
+        const req = c.req.raw;
       });
-    });
+    } catch (error) {
+      return c.json(
+        {
+          code: 5001,
+          message: "Internal server error",
+        },
+        500
+      );
+    }
   })
   .post("/push-command", async (c) => {
     const { clientId, command } = await c.req.json();
@@ -92,7 +129,7 @@ const app = new Hono()
   });
 
 // 清理挂起请求
-function removePendingRequest(clientId: string, resolve: Function) {
+function removePendingRequest(clientId: string, resolve: () => void) {
   const requests = pendingRequests.get(clientId) || [];
   const index = requests.findIndex((req) => req.resolve === resolve);
   if (index !== -1) requests.splice(index, 1);
