@@ -29,82 +29,79 @@ const app = new Hono()
   .post("/poll", async (c) => {
     const clientId = c.req.header("x-client-id");
     if (!clientId) {
-      return c.json(
-        {
-          code: 4001,
-          message: "Missing clientId header",
-        },
-        400
-      );
+      return c.json({ code: 4001, message: "Missing clientId header" }, 400);
+    }
+
+    // 检测是否有重复挂起的请求
+    const existingRequests = pendingRequests.get(clientId) || [];
+    if (existingRequests.length > 0) {
+      return c.json({ code: 4002, message: "Duplicate polling request" }, 400);
     }
 
     try {
-      // 更新最后活跃时间
       clientLastSeen.set(clientId, Date.now());
 
-      // 检查是否有待发送指令
+      // 检查现有命令
       const commands = clientCommands.get(clientId) || [];
       if (commands.length > 0) {
         const command = commands.shift();
         clientCommands.set(clientId, commands);
-        return c.json({
-          code: 200,
-          event: "command",
-          data: command,
-        });
+        return c.json({ code: 200, event: "command", data: command });
       }
 
-      // 无指令时挂起请求
+      const POLL_TIMEOUT = 30000; // 可考虑移到配置文件中
+
       return new Promise((resolve) => {
         const timeout = setTimeout(() => {
-          resolve(
-            c.json({
-              code: 200,
-              event: "timeout",
-            })
-          );
-          removePendingRequest(clientId, resolve);
-        }, 30000);
+          resolve(c.json({ code: 200, event: "timeout" }));
+          cleanup();
+        }, POLL_TIMEOUT);
 
-        // 异常处理回调
+        // 增强的cleanup函数
         const cleanup = () => {
           clearTimeout(timeout);
+          clearInterval(heartbeatInterval);
           removePendingRequest(clientId, resolve);
+          c.req.raw.socket?.removeListener("close", cleanup);
+          c.req.raw.socket?.removeListener("end", cleanup);
+          c.req.raw.socket?.removeListener("error", cleanup);
         };
 
-        // 存储挂起请求
+        // 心跳检测
+        let lastActivity = Date.now();
+        const heartbeatInterval = setInterval(() => {
+          if (Date.now() - lastActivity > POLL_TIMEOUT / 2) {
+            cleanup();
+            resolve(c.json({ code: 200, event: "timeout" }));
+          }
+        }, 5000);
+
+        // 事件监听
+        c.req.raw.socket?.on("close", cleanup);
+        c.req.raw.socket?.on("end", cleanup);
+        c.req.raw.socket?.on("error", cleanup);
+
+        // 存储请求
         const requestEntry = {
           clientId,
           resolve: (command: any) => {
+            lastActivity = Date.now();
             cleanup();
-            resolve(
-              c.json({
-                code: 200,
-                event: "command",
-                data: command,
-              })
-            );
+            resolve(c.json({ code: 200, event: "command", data: command }));
           },
           timeout,
+          createdAt: Date.now(),
         };
 
-        if (!pendingRequests.has(clientId)) {
-          pendingRequests.set(clientId, []);
-        }
-        // biome-ignore lint/style/noNonNullAssertion: <explanation>
-        pendingRequests.get(clientId)!.push(requestEntry);
-
-        // 处理连接关闭（兼容多种环境）
-        const req = c.req.raw;
+        pendingRequests.set(clientId, [...existingRequests, requestEntry]);
       });
     } catch (error) {
-      return c.json(
-        {
-          code: 5001,
-          message: "Internal server error",
-        },
-        500
-      );
+      console.error(`Polling error for client ${clientId}:`, {
+        error: error instanceof Error ? error.stack : error,
+        clientId,
+        timestamp: new Date().toISOString(),
+      });
+      return c.json({ code: 5001, message: "Internal server error" }, 500);
     }
   })
   .post("/push-command", async (c) => {
