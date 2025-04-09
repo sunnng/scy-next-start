@@ -62,9 +62,14 @@ const app = new Hono()
           clearTimeout(timeout);
           clearInterval(heartbeatInterval);
           removePendingRequest(clientId, resolve);
-          c.req.raw.socket?.removeListener("close", cleanup);
-          c.req.raw.socket?.removeListener("end", cleanup);
-          c.req.raw.socket?.removeListener("error", cleanup);
+
+          // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+          const socket = (c.req.raw as any).socket;
+          if (socket) {
+            socket.removeListener("close", cleanup);
+            socket.removeListener("end", cleanup);
+            socket.removeListener("error", cleanup);
+          }
         };
 
         // 心跳检测
@@ -77,9 +82,13 @@ const app = new Hono()
         }, 5000);
 
         // 事件监听
-        c.req.raw.socket?.on("close", cleanup);
-        c.req.raw.socket?.on("end", cleanup);
-        c.req.raw.socket?.on("error", cleanup);
+        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+        const socket = (c.req.raw as any).socket;
+        if (socket) {
+          socket.on("close", cleanup);
+          socket.on("end", cleanup);
+          socket.on("error", cleanup);
+        }
 
         // 存储请求
         const requestEntry = {
